@@ -991,6 +991,14 @@
                                      controller-holder-stl)))
                                   shape 19.5))
 
+(def reset-button
+  (->> (cylinder (/ 13 2) 10)
+       (with-fn 200)
+       (rdx 90)
+       (translate controller-cutout-pos)
+       (tz 7)
+       (tx 39)))
+
 (def encoder-pos (add-vec (left-wall-plate-position 0 -1) [0 -13 0]))
 (def encoder-rot-x oled-mount-rotation-x)
 (def encoder-rot-z oled-mount-rotation-z)
@@ -1214,6 +1222,7 @@
                      (left-wall-plate-place 0 0 oled-holder-cut)
                      screw-insert-holes
                      encoder-cutout
+                     reset-button
                      )))
 
 (def plate-right
