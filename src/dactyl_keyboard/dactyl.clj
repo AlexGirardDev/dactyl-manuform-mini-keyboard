@@ -87,11 +87,11 @@
 (defn column-offset [column]
   (cond
     (= column 2) [0 2.82 -4.0]
-    (= column 4) [0 -15 2.5]            ; original [0 -5.8 5.64]
-    (= column 5) [0 -15 3.0]            ; original [0 -5.8 5.64]
+    (= column 4) [0.25 -15 2.0]            ; original [0 -5.8 5.64]
+    (= column 5) [0.25 -15 3.0]            ; original [0 -5.8 5.64]
     :else [0 0 0]))
 
-(def thumb-offsets [-14 -6 2])
+(def thumb-offsets [-14 -10 2])
 
 (def keyboard-z-offset 11)               ; controls overall height; original=9 with centercol=3; use 16 for centercol=2
 
@@ -219,8 +219,8 @@
 
 (def oled-pcb-size [27.35 28.3 (- plate-thickness 1)])
 (def oled-screen-offset [0 -0.5 0])
-(def oled-screen-size [24.65 16.65 (- plate-thickness 1)])
-(def oled-viewport-size [24.0 13.0 (+ 0.1 plate-thickness)])
+(def oled-screen-size [24.85 16.85 (- plate-thickness 0.667)])
+(def oled-viewport-size [24.2 13.25 (+ 0.1 plate-thickness)])
 (def oled-viewport-offset [0 1.0 0])
 (def oled-mount-size [23.1 23.75 0.5])
 (def oled-holder-width (+ 3 (nth oled-pcb-size 0)))
@@ -229,6 +229,8 @@
 (def oled-holder-size [oled-holder-width oled-holder-height oled-holder-thickness])
 (def oled-mount-rotation-x (deg2rad 15))
 (def oled-mount-rotation-z (deg2rad -3))
+(def oled-post-outer-radius 1)
+(def oled-post-insets [[-2.2 -2.13] [-2.2 2.17] [2.2 -2.13] [2.2 2.17]]) ; multiplicative, originally all combinations of [-2 2]
 
 ;;;;;;;;;;;;;;;;
 ;; SA Keycaps ;;
@@ -739,14 +741,14 @@
     ))
 
 (def oled-holder-cut
-  (->>
+  (with-fn 200 (->>
     (union
       ; cut for oled pcb
       (difference 
         (translate [0 0 1] (apply cube (add-vec [0.5 0.5 0.1] oled-pcb-size)))
-        (for [x [-2 2] y [-2 2]]
-          (translate (div-vec oled-mount-size [x y 1])
-                     (cylinder 2.5 (- oled-holder-thickness 2.5))))
+        (for [[x y] oled-post-insets]
+          (translate (div-vec oled-mount-size [x y 3])
+                     (cylinder (+ oled-post-outer-radius 1) (- oled-holder-thickness 1.5))))
         )
       ; cut for oled screen
       (translate oled-screen-offset (apply cube oled-screen-size))
@@ -756,12 +758,12 @@
       (->> (cube 10 2 10)
            (translate oled-screen-offset)
            (translate [0 (- (+ (/ (nth oled-screen-size 1) 2) 1)) (+ plate-thickness 1.0)]))
-      (for [x [-2 2] y [-2 2]]
-        (translate (div-vec oled-mount-size [x y 1]) (cylinder (/ 2.5 2) 10)))
+      (for [[x y] oled-post-insets]
+        (translate (div-vec oled-mount-size [x y 1]) (cylinder 1.1 10)))
       )
     (rdy 180)
     (translate [0 0 (/ oled-holder-thickness 2)])
-    )
+    ))
   )
 
 (def oled-holder
@@ -858,20 +860,26 @@
 
 (def left-section
   (union
-    (left-wall-plate-place 0 0 oled-holder)
+    (left-wall-plate-place 0 0.3 oled-holder)
     (triangle-hulls
-      (left-wall-plate-place 1 1 oled-post)
+      (left-wall-plate-place 1 1.3 oled-post)
       (key-place 0 0 web-post-tl)
       (key-place 0 0 web-post-bl)
 
       (key-place 0 0 web-post-bl)
-      (left-wall-plate-place 1 1 oled-post)
+      (left-wall-plate-place 1 1.3 oled-post)
       (key-place 0 1 web-post-tl)
 
+      (key-place 0 0 web-post-bl)
       (left-wall-plate-place 1 -1 oled-post)
-      (left-wall-plate-place -1 -1 oled-post)
-      (thumb-tl-place web-post-tl)
-
+      (left-wall-plate-place 1 1.3 oled-post)
+    )
+    (->>
+      (cube oled-holder-width 5.1 oled-holder-thickness)
+      (tz 1.5)
+      (left-wall-plate-place 0 -0.85)
+    )
+    (triangle-hulls
       (thumb-tl-place web-post-tl)
       (left-wall-plate-place -1 -1 oled-post)
       (left-wall-plate-place 1 -1 oled-post)
@@ -890,7 +898,6 @@
 
       (thumb-tl-place web-post-tl)
       (thumb-tl-place web-post-tr)
-
       (thumb-tm-place web-post-tl)
 
       (thumb-tm-place web-post-tl)
@@ -926,10 +933,10 @@
     (for [x (range 0 ncols)] (key-wall-brace x 0 0 1 web-post-tl x       0 0 1 web-post-tr))
     (for [x (range 1 ncols)] (key-wall-brace x 0 0 1 web-post-tl (dec x) 0 0 1 web-post-tr))
     ; left-wall
-    (wall-brace  (partial key-place 0 0) 0 1 web-post-tl  (partial left-wall-plate-place 1 1) 0 1 oled-post)
-    (wall-brace  (partial left-wall-plate-place 1 1) 0 1 oled-post  (partial left-wall-plate-place -1 1) 0 1 oled-post)
-    (wall-brace  (partial left-wall-plate-place -1 1) 0 1 oled-post  (partial left-wall-plate-place -1 1) -1 0 oled-post)
-    (wall-brace  (partial left-wall-plate-place -1 1) -1 0 oled-post  (partial left-wall-plate-place -1 -1) -1 -1 oled-post)
+    (wall-brace  (partial key-place 0 0) 0 1 web-post-tl  (partial left-wall-plate-place 1 1.30) 0 1 oled-post)
+    (wall-brace  (partial left-wall-plate-place 1 1.30) 0 1 oled-post  (partial left-wall-plate-place -1 1.30) 0 1 oled-post)
+    (wall-brace  (partial left-wall-plate-place -1 1.30) 0 1 oled-post  (partial left-wall-plate-place -1 1.30) -1 0 oled-post)
+    (wall-brace  (partial left-wall-plate-place -1 1.30) -1 0 oled-post  (partial left-wall-plate-place -1 -1) -1 -1 oled-post)
     (wall-brace  (partial left-wall-plate-place -1 -1) -1 -1 oled-post  thumb-tl-place -1 0 web-post-tl)
     (wall-brace  thumb-tl-place -1 0 web-post-tl thumb-tl-place -1 0 web-post-bl)
     ; front wall
@@ -955,99 +962,39 @@
     ))
 
 ; Cutout for controller/trrs jack holder
-(def controller-ref (key-position 0 0 (map - (wall-locate3  0  -1) [0 (/ mount-height 2) 0])))
-(def controller-cutout-pos (map + [-21 19.8 0] [(first controller-ref) (second controller-ref) 2]))
+(def controller-ref (key-position 0 0 (map - (wall-locate2  0  -1) [0 (/ mount-height 2) 0])))
+(def controller-cutout-pos (map + [-21.5 23.7 0] [(first controller-ref) (second controller-ref) 2]))
 
 (def controller-holder-stl-pos
-  (add-vec controller-cutout-pos [16.4 -22.9 -2.0]))
+  (add-vec controller-cutout-pos [-4.0 -40.0 -2.0]))
 
-(def controller-holder-stl
-  (->> (import "controller holder.stl")
-     ;(scale [0.97 0.97 1])
+(def controller-holder-stl (import "controller holder (elite-c).stl"))
+
+(defn place-controller-holder [shape]
+  (->> shape
      (rotate (deg2rad 90) [1 0 0])
      (rotate oled-mount-rotation-z [0 0 1])
      (translate controller-holder-stl-pos)
      )
   )
 
-; (defn intersect-bottom [a b]
-;   (->> (project (intersection a b))
-;        (extrude-linear {:height 12.6 :twist 0 :convexity 0})
-;        (translate [0 0 (/ 12.6 2)])
-;        )
-;   )
-
-; (defn controller-cutout [shape] (intersect-bottom controller-holder-stl shape))
-
-; usb-c adapter cutout
-
-(defn smooth-circle [radius] (scale [0.01 0.01 0.01] (circle (* 100 radius))))
-
-(defn move-to-usb-center [shape]
-  (->> shape
-      (rotate (deg2rad 90) [1 0 0])
-      (rotate (deg2rad 90) [0 1 0])
-      (rotate oled-mount-rotation-z [0 0 1])
-      (translate (add-vec (left-wall-plate-position 0 1) [-5 1.5 -25]))
-      ))
-
-(def inner-usbc-cutout
-  (->> (hull
-        (translate [-2.5 0 0] (smooth-circle 3))
-        (translate [2.5 0 0] (smooth-circle 3))
+(defn intersect-bottom [a b height]
+  (->> (project (intersection a b))
+       (extrude-linear {:height height :twist 0 :convexity 0})
+       (translate [0 0 (/ height 2)])
        )
-    (extrude-linear {:height (+ 2 wall-thickness)})
-    (move-to-usb-center)
   )
-)
 
-(def bottom-usb-screw-hole
-  (->> (smooth-circle 1.2)
-       (extrude-linear {:height (+ 2 wall-thickness)})
-       (move-to-usb-center)
-       (translate [0 0 -7.5])
-))
-
-(def top-usb-screw-hole
-  (->> (smooth-circle 1.2)
-       (extrude-linear {:height (+ 2 wall-thickness)})
-       (move-to-usb-center)
-       (translate [0 0 7.5])
-))
-
-(def usb-wall-cutout
-  (->> (hull
-         (translate [-7.5 0 0] (smooth-circle 4))
-         (translate [7.5 0 0] (smooth-circle 4)))
-       (extrude-linear {:height wall-thickness})
-       (move-to-usb-center)
-       (translate [0 -0.5 0])))
-
-(def usb-screw-holes
-  (union top-usb-screw-hole bottom-usb-screw-hole usb-wall-cutout)
-)
-
-(def trrs-hole
-  (->> (square 6 6.2)
-       (extrude-linear {:height (+ 2 wall-thickness)})
-       (move-to-usb-center)
-       (translate [10 0 -9])
-  ))
-
-(def trrs-lip
-  (->> (square 7.1 8.2)
-       (extrude-linear {:height wall-thickness})
-       (move-to-usb-center)
-       (translate [10 0.5 -9])
-  ))
-
-(def trrs-cutout
-  (union trrs-hole trrs-lip))
+(defn controller-cutout [shape] (intersect-bottom
+                                  (ty -0.9 (place-controller-holder
+                                    (scale [1.02 1.02 1.02]
+                                     controller-holder-stl)))
+                                  shape 19.5))
 
 (def encoder-pos (add-vec (left-wall-plate-position 0 -1) [0 -13 0]))
 (def encoder-rot-x oled-mount-rotation-x)
 (def encoder-rot-z oled-mount-rotation-z)
-(def encoder-cutout-shape (cylinder (/ 6.5 2) 1000))
+(def encoder-cutout-shape (cylinder (/ 7 2) 1000))
 (def encoder-cutout (->> encoder-cutout-shape
                          (rx encoder-rot-x)
                          (rz encoder-rot-z)
@@ -1261,9 +1208,7 @@
                        left-section
                        connectors
                        (difference case-walls-with-screws
-                                   inner-usbc-cutout
-                                   usb-screw-holes
-                                   trrs-cutout
+                                   (controller-cutout case-walls-with-screws)
                                    ))
                      (if (== wrist-rest-on 1) (->> rest-case-cuts	(translate [(+ (first thumborigin ) 33) (- (second thumborigin)  (- 56 nrows)) 0])))
                      (left-wall-plate-place 0 0 oled-holder-cut)
@@ -1311,12 +1256,18 @@
       (write-scad
         (union 
           model-right
-          ; (-% controller-holder-stl)
+          ; (-% controlle
+          (-% (ty -0.9 (place-controller-holder
+                                    (scale [1.02 1.02 1.02]
+                                     controller-holder-stl)))))
+ 
           )
-        ))
+        )
 
 (spit "things/controller-holder.scad"
-      (write-scad (-% controller-holder-stl)))
+      (write-scad (-% (ty -0.9 (place-controller-holder
+                                    (scale [1.02 1.02 1.02]
+                                     controller-holder-stl))))))
 
 (spit "things/left.scad"
       (write-scad (mirror [-1 0 0] model-right)))
@@ -1326,14 +1277,14 @@
         (union
           model-right
           caps
-			;(if (== bottom-cover 1) (->> model-plate-right))
-			(if (== wrist-rest-on 1) (->> wrist-rest-build 		)		)
+      ;(if (== bottom-cover 1) (->> model-plate-right))
+      (if (== wrist-rest-on 1) (->> wrist-rest-build 		)		)
           )
         )
       )
 
-(spit "things/usbc-cutout.scad"
-      (write-scad inner-usbc-cutout))
+; (spit "things/usbc-cutout.scad"
+;       (write-scad inner-usbc-cutout))
 
 (spit "things/right-plate.scad"
       (write-scad
