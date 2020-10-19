@@ -87,8 +87,8 @@
 (defn column-offset [column]
   (cond
     (= column 2) [0 2.82 -4.0]
-    (= column 4) [0.25 -15 2.0]            ; original [0 -5.8 5.64]
-    (= column 5) [0.25 -15 3.0]            ; original [0 -5.8 5.64]
+    (= column 4) [0.25 -14 2.0]            ; original [0 -5.8 5.64]
+    (= column 5) [0.25 -14 3.0]            ; original [0 -5.8 5.64]
     :else [0 0 0]))
 
 (def thumb-offsets [-14 -10 2])
@@ -150,9 +150,9 @@
 
 ; kailh/aliaz: no nubs, 13.9
 ; outemu: nubs, 14.00x14.0
-(def create-side-nubs? true)
-(def keyswitch-height 14.00) ;; Was 14.1, then 14.25, then 13.9 (for snug fit with with aliaz/outemy sky switches)
-(def keyswitch-width 14.00)
+(def create-side-nubs? false)
+(def keyswitch-height 13.90) ;; Was 14.1, then 14.25, then 13.9 (for snug fit with with aliaz/outemy sky switches)
+(def keyswitch-width 13.90)
 
 (def sa-profile-key-height 7.39)
 
@@ -208,7 +208,7 @@
          (union
            (difference (single-plate-outer-cube plate-thickness)
                        (single-plate-cut (+ 1 plate-thickness)))
-           single-plate-side-nubs
+           (if create-side-nubs? single-plate-side-nubs)
            ))
        (tz plate-thickness)
        ))
@@ -963,7 +963,7 @@
 
 ; Cutout for controller/trrs jack holder
 (def controller-ref (key-position 0 0 (map - (wall-locate2  0  -1) [0 (/ mount-height 2) 0])))
-(def controller-cutout-pos (map + [-21.5 23.7 0] [(first controller-ref) (second controller-ref) 2]))
+(def controller-cutout-pos (map + [-21.5 24.1 0] [(first controller-ref) (second controller-ref) 2]))
 
 (def controller-holder-stl-pos
   (add-vec controller-cutout-pos [-4.0 -40.0 -2.0]))
@@ -987,7 +987,7 @@
 
 (defn controller-cutout [shape] (intersect-bottom
                                   (ty -0.9 (place-controller-holder
-                                    (scale [1.02 1.02 1.02]
+                                    (scale [1.01 1.02 1.01]
                                      controller-holder-stl)))
                                   shape 19.5))
 
@@ -1002,7 +1002,7 @@
 (def encoder-pos (add-vec (left-wall-plate-position 0 -1) [0 -13 0]))
 (def encoder-rot-x oled-mount-rotation-x)
 (def encoder-rot-z oled-mount-rotation-z)
-(def encoder-cutout-shape (cylinder (/ 7 2) 1000))
+(def encoder-cutout-shape (with-fn 200 (cylinder (/ 8 2) 1000)))
 (def encoder-cutout (->> encoder-cutout-shape
                          (rx encoder-rot-x)
                          (rz encoder-rot-z)
