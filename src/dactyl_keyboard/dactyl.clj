@@ -82,7 +82,7 @@
 ; (def column-style
 ;   (if (> nrows 5) :orthographic :standard))  ; options include :standard, :orthographic, and :fixed
 ; (def column-style :fixed)
-(def pinky-15u false)
+(def pinky-15u true)
 
 (defn column-offset [column]
   (cond
@@ -115,10 +115,10 @@
 ;@@@@@@@@@@@@@@@@@@@@@@@@@@@
 ;;;;;;;;;Wrist rest;;;;;;;;;;
 ;@@@@@@@@@@@@@@@@@@@@@@@@@@
-(def wrist-rest-on 0) 						;;0 for no rest 1 for a rest connection cut out in bottom case
+(def wrist-rest-on 1) 						;;0 for no rest 1 for a rest connection cut out in bottom case
 (def wrist-rest-back-height 18)				;;height of the back of the wrist rest--Default 34
 (def wrist-rest-angle -1) 			        ;;angle of the wrist rest--Default 20
-(def wrist-rest-rotation-angle 100)			;;0 default The angle in counter clockwise the wrist rest is at
+(def wrist-rest-rotation-angle 0)			;;0 default The angle in counter clockwise the wrist rest is at
 (def wrist-rest-ledge 3.5)					;;The height of ledge the silicone wrist rest fits inside
 (def wrist-rest-y-angle 0)					;;0 Default.  Controls the wrist rest y axis tilt (left to right)
 (def wrist-rest-rounding 3)
