@@ -150,7 +150,7 @@
 
 ; kailh/aliaz: no nubs, 13.9
 ; outemu: nubs, 14.00x14.0
-(def create-side-nubs? false)
+(def create-side-nubs? true)
 (def keyswitch-height 13.90) ;; Was 14.1, then 14.25, then 13.9 (for snug fit with with aliaz/outemy sky switches)
 (def keyswitch-width 13.90)
 
@@ -1029,19 +1029,19 @@
 (defn screw-insert-all-shapes [bottom-radius top-radius height]
   (union 
          ; top left, near usb/trrs
-         (screw-insert 0 0         bottom-radius top-radius height [5.8 -3 0])
+         (screw-insert 0 0         bottom-radius top-radius height [6.5 -3 0])
          ; middle top
-         (screw-insert 3 0         bottom-radius top-radius height [-9 0 0])
+         (screw-insert 3 0         bottom-radius top-radius height [-9 -2 0])
          ; top right
-         (screw-insert lastcol 0         bottom-radius top-radius height [-4 9 0])
+         (screw-insert lastcol 0         bottom-radius top-radius height [-4 6 0])
          ; lower right
-         (screw-insert lastcol lastrow  bottom-radius top-radius height [-4 13 0])
+         (screw-insert lastcol lastrow  bottom-radius top-radius height [-5 19.5 0])
          ; middle bottom
-         (screw-insert 3 lastrow         bottom-radius top-radius height [-5 2 0])
+         (screw-insert 3 lastrow         bottom-radius top-radius height [-5 2.5 0])
          ; thumb cluster, closest to user
-         (screw-insert 1 lastrow         bottom-radius top-radius height [-14 -11 0])
+         (screw-insert 1 lastrow         bottom-radius top-radius height [-18 -13 0])
          ; thumb cluster left
-         (screw-insert 0 lastrow   bottom-radius top-radius height [4 -80 0])
+         (screw-insert 0 lastrow   bottom-radius top-radius height [7 -80 0])
 ))
 
 ; Hole Depth Y: 4.4
