@@ -82,7 +82,7 @@
 ; (def column-style
 ;   (if (> nrows 5) :orthographic :standard))  ; options include :standard, :orthographic, and :fixed
 ; (def column-style :fixed)
-(def pinky-15u true)
+(def pinky-15u false)
 
 (defn column-offset [column]
   (cond
@@ -91,7 +91,7 @@
     (= column 5) [0.25 -14 3.0]            ; original [0 -5.8 5.64]
     :else [0 0 0]))
 
-(def thumb-offsets [-14 -10 2])
+(def thumb-offsets [-4 -10 2])
 
 (def keyboard-z-offset 11)               ; controls overall height; original=9 with centercol=3; use 16 for centercol=2
 
@@ -449,21 +449,29 @@
 (def pinky-connectors
   (apply union
          (concat
-          ;; Row connections
-          (for [row (range 0 lastrow)]
+          (for [row (range lastrow nrows)
+              column (range (dec lastcol) ncols)]
             (triangle-hulls
-             (key-place lastcol row web-post-tr)
-             (key-place lastcol row wide-post-tr)
-             (key-place lastcol row web-post-br)
-             (key-place lastcol row wide-post-br)))
+              (key-place column row web-post-tl)
+              (key-place (dec column) row web-post-tr)
+              (key-place column row web-post-bl)
+              (key-place (dec column) row web-post-br)))
 
-          ;; Column connections
-          (for [row (range 0 cornerrow)]
+          (for [column (range (dec lastcol) ncols)]
             (triangle-hulls
-             (key-place lastcol row web-post-br)
-             (key-place lastcol row wide-post-br)
-             (key-place lastcol (inc row) web-post-tr)
-             (key-place lastcol (inc row) wide-post-tr)))
+              (key-place column cornerrow web-post-bl)
+              (key-place column cornerrow web-post-br)
+              (key-place column (inc cornerrow) web-post-tl)
+              (key-place column (inc cornerrow) web-post-tr)))
+
+
+          (for [column (range (dec (dec lastcol)) lastcol)
+                row (cons cornerrow ())]
+            (triangle-hulls
+              (key-place column row web-post-br)
+              (key-place column (inc row) web-post-tr)
+              (key-place (inc column) row web-post-bl)
+              (key-place (inc column) (inc row) web-post-tl)))
           ;;
 )))
 
@@ -717,7 +725,7 @@
 (defn key-holes [filled]
   (union
     (apply union
-           (for [column columns row rows :when (or (.contains [3] column) (not= row lastrow))]
+           (for [column columns row rows :when (or (.contains [3, 4, 5] column) (not= row lastrow))]
              (->> (key-hole filled)
                   (key-place column row))
              ))
@@ -923,11 +931,12 @@
     (let [tr (if (true? pinky-15u) wide-post-tr web-post-tr)
           br (if (true? pinky-15u) wide-post-br web-post-br)]
       (union (key-wall-brace lastcol 0 0 1 tr lastcol 0 1 0 tr)
-             (for [y (range 0 lastrow)] (key-wall-brace lastcol y 1 0 tr lastcol y 1 0 br))
-             (for [y (range 1 lastrow)] (key-wall-brace lastcol (dec y) 1 0 br lastcol y 1 0 tr))
-             (key-wall-brace lastcol cornerrow 0 -1 br lastcol cornerrow 1 0 br)))
+             (for [y (range 0 nrows)] (key-wall-brace lastcol y 1 0 tr lastcol y 1 0 br))
+             (for [y (range 1 nrows)] (key-wall-brace lastcol (dec y) 1 0 br lastcol y 1 0 tr))
+             (key-wall-brace lastcol lastrow 0 -1 br lastcol lastrow 1 0 br)
+             ))
     ; pinky-walls
-    (key-wall-brace lastcol cornerrow 0 -1 web-post-br lastcol cornerrow 0 -1 wide-post-br)
+    (key-wall-brace lastcol lastrow 0 -1 web-post-br lastcol lastrow 0 -1 wide-post-br)
     (key-wall-brace lastcol 0 0 1 web-post-tr lastcol 0 0 1 wide-post-tr)
     ; back wall
     (for [x (range 0 ncols)] (key-wall-brace x 0 0 1 web-post-tl x       0 0 1 web-post-tr))
@@ -941,9 +950,9 @@
     (wall-brace  thumb-tl-place -1 0 web-post-tl thumb-tl-place -1 0 web-post-bl)
     ; front wall
     (key-wall-brace 3 lastrow   0 -1 web-post-bl 3 lastrow 0.5 -1 web-post-br)
-    (key-wall-brace 3 lastrow 0.5 -1 web-post-br 4 cornerrow 0.5 -1 web-post-bl)
-    (for [x (range 4 ncols)] (key-wall-brace x cornerrow 0 -1 web-post-bl x       cornerrow 0 -1 web-post-br)) ; TODO fix extra wall
-    (for [x (range 5 ncols)] (key-wall-brace x cornerrow 0 -1 web-post-bl (dec x) cornerrow 0 -1 web-post-br))
+    ; (key-wall-brace 3 lastrow 0.5 -1 web-post-br 4 cornerrow 0.5 -1 web-post-bl)
+    (for [x (range 4 ncols)] (key-wall-brace x lastrow 0 -1 web-post-bl x       lastrow 0 -1 web-post-br)) ; TODO fix extra wall
+    (for [x (range 4 ncols)] (key-wall-brace x lastrow 0 -1 web-post-bl (dec x) lastrow 0 -1 web-post-br))
     ; thumb walls
     (wall-brace thumb-br-place  0 -1 web-post-br thumb-tr-place  0 -1 thumb-post-br)
     (wall-brace thumb-br-place  0 -1 web-post-br thumb-br-place  0 -1 web-post-bl)
@@ -992,7 +1001,7 @@
                                   shape 19.5))
 
 (def reset-button
-  (->> (cylinder (/ 13 2) 10)
+  (->> (cylinder (/ 6 2) 10)
        (with-fn 200)
        (rdx 90)
        (translate controller-cutout-pos)
@@ -1035,13 +1044,13 @@
          ; top right
          (screw-insert lastcol 0         bottom-radius top-radius height [-4 6 0])
          ; lower right
-         (screw-insert lastcol lastrow  bottom-radius top-radius height [-5 19.5 0])
+         (screw-insert lastcol lastrow  bottom-radius top-radius height [-2 -5 0])
          ; middle bottom
-         (screw-insert 3 lastrow         bottom-radius top-radius height [-5 2.5 0])
+         (screw-insert 3 lastrow         bottom-radius top-radius height [-8 2.5 0])
          ; thumb cluster, closest to user
-         (screw-insert 1 lastrow         bottom-radius top-radius height [-18 -13 0])
+         (screw-insert 1 lastrow         bottom-radius top-radius height [-8 -13 0])
          ; thumb cluster left
-         (screw-insert 0 lastrow   bottom-radius top-radius height [7 -80 0])
+         (screw-insert 0 lastrow   bottom-radius top-radius height [13 -80 0])
 ))
 
 ; Hole Depth Y: 4.4
